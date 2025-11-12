@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import f1CarMotion from "@/assets/f1-car-motion.png";
-import { Activity, Clock, Flag } from "lucide-react";
+import cotaTrack from "@/assets/cota-track.jpg";
+import { Activity, Clock, Flag, Radio } from "lucide-react";
 
 export const RaceHeader = () => {
   const [time, setTime] = useState(new Date());
@@ -12,12 +13,27 @@ export const RaceHeader = () => {
 
   return (
     <div className="relative overflow-hidden bg-gradient-racing rounded-2xl shadow-racing mb-8">
-      {/* Background Image */}
-      <div className="absolute inset-0 opacity-20">
+      {/* Track Background with Overlay */}
+      <div className="absolute inset-0">
+        <div 
+          className="absolute inset-0 opacity-30"
+          style={{
+            backgroundImage: `url(${cotaTrack})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'brightness(0.4) contrast(1.2)'
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-black/80" />
+      </div>
+
+      {/* F1 Car Overlay */}
+      <div className="absolute right-0 top-0 bottom-0 w-1/2 opacity-20">
         <img 
           src={f1CarMotion} 
           alt="F1 Car" 
-          className="w-full h-full object-cover blur-sm"
+          className="h-full object-contain object-right"
+          style={{ filter: 'brightness(1.2)' }}
         />
       </div>
 
@@ -41,12 +57,16 @@ export const RaceHeader = () => {
               ADVANCED COGNITIVE TELEMETRY SYSTEM
             </p>
             <div className="flex items-center gap-6 mt-4">
-              <div className="flex items-center gap-2">
-                <Activity className="w-4 h-4 text-f1-green" />
-                <span className="text-sm font-mono text-white/90">LIVE DATA STREAM</span>
+              <div className="flex items-center gap-2 bg-black/40 rounded-lg px-3 py-1.5 border border-f1-green/30">
+                <Radio className="w-4 h-4 text-f1-green animate-pulse" />
+                <span className="text-sm font-mono text-white/90 font-bold">LIVE</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-f1-cyan" />
+              <div className="flex items-center gap-2 bg-black/40 rounded-lg px-3 py-1.5 border border-border/30">
+                <Activity className="w-4 h-4 text-f1-cyan" />
+                <span className="text-sm font-mono text-white/90">REAL-TIME TELEMETRY</span>
+              </div>
+              <div className="flex items-center gap-2 bg-black/40 rounded-lg px-3 py-1.5 border border-border/30">
+                <Clock className="w-4 h-4 text-f1-yellow" />
                 <span className="text-sm font-mono text-white/90">
                   {time.toLocaleTimeString()}
                 </span>
