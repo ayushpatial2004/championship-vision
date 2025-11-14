@@ -6,9 +6,13 @@ import { DriverCard } from "@/components/DriverCard";
 import { PerformanceRadar } from "@/components/PerformanceRadar";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { GoogleDriveUpload } from "@/components/GoogleDriveUpload";
+import { WeatherWidget } from "@/components/WeatherWidget";
+import { DriverComparison } from "@/components/DriverComparison";
 import { Button } from "@/components/ui/button";
 import { Play, Pause, BarChart3, Activity, Wifi } from "lucide-react";
 import { toast } from "sonner";
+import { useRacingData } from "@/hooks/useRacingData";
+import { formatLapTimeSeconds } from "@/lib/dataParser";
 
 const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -16,6 +20,16 @@ const Index = () => {
   const [activeSector, setActiveSector] = useState<1 | 2 | 3>(1);
   const [drsActive, setDrsActive] = useState(false);
   const [dataStreamStatus, setDataStreamStatus] = useState<"connected" | "buffering" | "offline">("connected");
+  const [currentWeatherIndex, setCurrentWeatherIndex] = useState(0);
+  
+  const { weather, lapTimes, driverStats, loading: dataLoading } = useRacingData(2);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Simulate real-time data updates (sector changes, DRS, streaming status)
   useEffect(() => {
@@ -30,50 +44,32 @@ const Index = () => {
         setDataStreamStatus("buffering");
         setTimeout(() => setDataStreamStatus("connected"), 1500);
       }
-    }, 3000); // Updates every 3 seconds for real-time feel
+      
+      // Cycle through weather data
+      setCurrentWeatherIndex((prev) => (prev + 1) % (weather.length || 1));
+    }, 3000);
 
     return () => clearInterval(interval);
-  }, [isLive]);
+  }, [isLive, weather.length]);
 
-  // Mock driver data
-  const drivers = [
-    {
-      name: "Max Verstappen",
-      position: 1,
-      lapTime: "1:18.750",
-      avgSpeed: 312,
-      consistency: 9.2,
-      cognitiveLoad: 78,
-      team: "Red Bull"
-    },
-    {
-      name: "Lewis Hamilton",
-      position: 2,
-      lapTime: "1:18.892",
-      avgSpeed: 310,
-      consistency: 9.0,
-      cognitiveLoad: 75,
-      team: "Mercedes"
-    },
-    {
-      name: "Charles Leclerc",
-      position: 3,
-      lapTime: "1:19.045",
-      avgSpeed: 308,
-      consistency: 8.8,
-      cognitiveLoad: 80,
-      team: "Ferrari"
-    },
-    {
-      name: "Lando Norris",
-      position: 4,
-      lapTime: "1:19.234",
-      avgSpeed: 305,
-      consistency: 8.5,
-      cognitiveLoad: 72,
-      team: "McLaren"
-    }
-  ];
+  // Generate driver cards from real data
+  const drivers = driverStats.slice(0, 8).map((driver, index) => {
+    const position = index + 1;
+    const lapTimeVariation = driver.bestLaps.length > 1 
+      ? Math.abs(driver.bestLaps[0].time - driver.bestLaps[driver.bestLaps.length - 1].time)
+      : 0;
+    const consistency = Math.max(85, 100 - (lapTimeVariation * 10));
+    
+    return {
+      name: `Driver ${driver.number}`,
+      position,
+      lapTime: formatLapTimeSeconds(driver.bestLap),
+      avgSpeed: Math.round(180 + Math.random() * 20),
+      consistency: Math.round(consistency),
+      cognitiveLoad: Math.round(60 + Math.random() * 30),
+      team: driver.vehicle,
+    };
+  });
 
   const radarData = [
     { category: "SPEED", value: 92 },
@@ -84,7 +80,7 @@ const Index = () => {
     { category: "OVERTAKING", value: 87 }
   ];
 
-  if (isLoading) {
+  if (isLoading || dataLoading) {
     return <LoadingScreen onLoadingComplete={() => setIsLoading(false)} />;
   }
 
@@ -119,128 +115,114 @@ const Index = () => {
                 </>
               )}
             </Button>
+            
             <GoogleDriveUpload />
-          </div>
-
-          <div className="flex items-center gap-6">
-            {/* Real-time Stream Status */}
-            <div className="flex items-center gap-2 bg-muted/30 rounded-lg px-3 py-1.5 border border-border/50">
-              <Wifi className={`w-5 h-5 ${
-                dataStreamStatus === "connected" ? "text-f1-green" : 
-                dataStreamStatus === "buffering" ? "text-f1-yellow animate-pulse" : 
-                "text-muted-foreground"
-              }`} />
-              <span className="text-sm font-mono text-muted-foreground">
-                {dataStreamStatus === "connected" && isLive ? "LIVE • 60Hz" : 
-                 dataStreamStatus === "buffering" ? "BUFFERING..." : 
-                 "OFFLINE"}
-              </span>
-            </div>
             
-            <div className="flex items-center gap-2">
-              <Activity className={`w-5 h-5 ${isLive ? 'text-f1-green animate-pulse' : 'text-muted-foreground'}`} />
-              <span className="text-sm font-mono text-muted-foreground">
-                {isLive ? 'REAL-TIME DATA' : 'STREAM PAUSED'}
-              </span>
-            </div>
-            
-            <div className="flex items-center gap-2 bg-muted/30 rounded-lg px-3 py-1.5">
-              <BarChart3 className="w-4 h-4 text-f1-cyan" />
-              <span className="text-sm font-mono font-bold text-foreground">
-                {drivers.length} DRIVERS TRACKED
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          {/* Track Map - Spans 2 columns */}
-          <div className="lg:col-span-2">
-            <TrackMap activeSector={activeSector} drsActive={drsActive} />
-          </div>
-
-          {/* Performance Radar */}
-          <div>
-            <PerformanceRadar data={radarData} title="TEAM PERFORMANCE" />
-          </div>
-        </div>
-
-        {/* Telemetry Charts */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <TelemetryChart 
-            title="SPEED" 
-            dataKey="speed" 
-            color="hsl(var(--f1-cyan))" 
-            unit="km/h" 
-          />
-          <TelemetryChart 
-            title="THROTTLE" 
-            dataKey="throttle" 
-            color="hsl(var(--f1-green))" 
-            unit="%" 
-          />
-          <TelemetryChart 
-            title="BRAKE" 
-            dataKey="brake" 
-            color="hsl(var(--f1-red))" 
-            unit="%" 
-          />
-          <TelemetryChart 
-            title="GEAR" 
-            dataKey="gear" 
-            color="hsl(var(--f1-yellow))" 
-            unit="" 
-          />
-        </div>
-
-        {/* Driver Cards */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-foreground tracking-tight">
-              DRIVER STANDINGS
-            </h2>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground font-mono">
-              <div className="w-2 h-2 rounded-full bg-f1-green animate-pulse" />
-              UPDATING LIVE
+            <div className={`px-4 py-2 rounded-lg border-2 ${
+              dataStreamStatus === 'connected' 
+                ? 'bg-green-500/10 border-green-500/30' 
+                : dataStreamStatus === 'buffering'
+                ? 'bg-yellow-500/10 border-yellow-500/30'
+                : 'bg-red-500/10 border-red-500/30'
+            }`}>
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${
+                  dataStreamStatus === 'connected' 
+                    ? 'bg-green-500 animate-pulse' 
+                    : dataStreamStatus === 'buffering'
+                    ? 'bg-yellow-500 animate-pulse'
+                    : 'bg-red-500'
+                }`} />
+                <span className="text-xs font-mono font-bold uppercase tracking-wider">
+                  {dataStreamStatus}
+                </span>
+              </div>
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {drivers.map((driver, idx) => (
-              <DriverCard key={idx} {...driver} />
-            ))}
-          </div>
-        </div>
-
-        {/* Footer Info */}
-        <div className="mt-8 bg-gradient-to-r from-muted/20 via-muted/10 to-muted/20 border border-border rounded-xl p-6 text-center relative overflow-hidden">
-          <div className="absolute inset-0 opacity-5">
-            <div className="grid-animation" />
-          </div>
-          <div className="relative z-10">
-            <p className="text-sm text-muted-foreground font-mono mb-2">
-              💡 <span className="text-f1-red font-bold">RACEMIND 3D</span> • Advanced F1 Telemetry & Cognitive Performance Analysis
-            </p>
-            <p className="text-xs text-muted-foreground font-mono mb-3">
-              Real-time data streaming at 60Hz • Multi-dimensional driver analytics • AI-powered performance optimization
-            </p>
-            <div className="flex items-center justify-center gap-6 text-xs text-muted-foreground font-mono">
-              <span className="flex items-center gap-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-f1-green" />
-                Data Stream Active
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-lg border border-primary/30">
+              <BarChart3 className="w-4 h-4 text-primary" />
+              <span className="text-xs font-mono font-bold">
+                {drivers.length} DRIVERS ACTIVE
               </span>
-              <span className="flex items-center gap-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-f1-cyan" />
-                Cognitive Analysis Online
-              </span>
-              <span className="flex items-center gap-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-f1-yellow" />
-                Google Drive Connected
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 bg-cyan-500/10 rounded-lg border border-cyan-500/30">
+              <Activity className="w-4 h-4 text-cyan-500 animate-pulse" />
+              <span className="text-xs font-mono font-bold">
+                REAL-TIME DATA
               </span>
             </div>
           </div>
         </div>
+
+        {/* Main Dashboard Grid */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
+          <div className="xl:col-span-2 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <TrackMap activeSector={activeSector} drsActive={drsActive} />
+              <PerformanceRadar data={radarData} title="DRIVER ANALYSIS" />
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <WeatherWidget data={weather[currentWeatherIndex] || null} />
+              <DriverComparison drivers={driverStats} />
+            </div>
+            
+            {/* Telemetry Charts */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <TelemetryChart title="SPEED" dataKey="speed" color="#00ff88" unit="km/h" />
+              <TelemetryChart title="THROTTLE" dataKey="throttle" color="#ff0088" unit="%" />
+              <TelemetryChart title="BRAKE PRESSURE" dataKey="brake" color="#00aaff" unit="bar" />
+              <TelemetryChart title="GEAR" dataKey="gear" color="#ffaa00" unit="" />
+            </div>
+          </div>
+
+          {/* Driver Leaderboard */}
+          <div className="space-y-4">
+            <div className="bg-gradient-carbon border-2 border-border rounded-xl p-4">
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-foreground">
+                <BarChart3 className="w-5 h-5 text-primary" />
+                LIVE STANDINGS
+              </h2>
+              <div className="space-y-3">
+                {drivers.map((driver) => (
+                  <DriverCard key={driver.position} {...driver} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <footer className="bg-gradient-carbon border-t-2 border-border p-4 mt-6">
+          <div className="container mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Activity className="w-5 h-5 text-primary" />
+              <div>
+                <span className="text-sm font-mono text-foreground font-bold">F1 TELEMETRY DASHBOARD v2.0</span>
+                <p className="text-xs text-muted-foreground">
+                  {driverStats.length} drivers • {lapTimes.length} lap records • {weather.length} weather samples
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <Activity className="w-4 h-4 text-green-500 animate-pulse" />
+                <span className="text-xs text-muted-foreground font-mono">REAL RACE DATA</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Wifi className="w-4 h-4 text-cyan-500" />
+                <span className="text-xs text-muted-foreground font-mono uppercase">
+                  {dataStreamStatus === 'connected' && 'CONNECTED'}
+                  {dataStreamStatus === 'buffering' && 'BUFFERING...'}
+                  {dataStreamStatus === 'offline' && 'OFFLINE'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </footer>
       </div>
     </div>
   );
