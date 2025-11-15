@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import f1CarLoading from "@/assets/f1-car-loading.gif";
+import f1Speedometer from "@/assets/f1-speedometer.gif";
 import f1Wireframe from "@/assets/f1-wireframe.jpg";
 
 interface LoadingScreenProps {
@@ -75,13 +75,13 @@ export const LoadingScreen = ({ onLoadingComplete }: LoadingScreenProps) => {
           </p>
         </div>
 
-        {/* F1 Car Animation */}
+        {/* F1 Speedometer Animation */}
         <div className="relative w-full max-w-2xl h-48 mb-12 flex items-center justify-center">
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-f1-red/20 to-transparent animate-pulse" />
           <img 
-            src={f1CarLoading} 
-            alt="F1 Car Loading" 
-            className="h-40 object-contain relative z-10"
+            src={f1Speedometer} 
+            alt="F1 Speedometer Loading" 
+            className="h-48 object-contain relative z-10"
             style={{
               filter: 'drop-shadow(0 0 30px rgba(255, 0, 0, 0.5))'
             }}

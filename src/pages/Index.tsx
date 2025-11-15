@@ -8,6 +8,12 @@ import { LoadingScreen } from "@/components/LoadingScreen";
 import { GoogleDriveUpload } from "@/components/GoogleDriveUpload";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { DriverComparison } from "@/components/DriverComparison";
+import { TrackIntelligence } from "@/components/TrackIntelligence";
+import { CornerAnalysis } from "@/components/CornerAnalysis";
+import { DeltaAnalysis } from "@/components/DeltaAnalysis";
+import { RiskMap } from "@/components/RiskMap";
+import { AttackZones } from "@/components/AttackZones";
+import { StrategyWindow } from "@/components/StrategyWindow";
 import { Button } from "@/components/ui/button";
 import { Play, Pause, BarChart3, Activity, Wifi } from "lucide-react";
 import { toast } from "sonner";
@@ -169,6 +175,17 @@ const Index = () => {
               <DriverComparison drivers={driverStats} />
             </div>
             
+            {/* Advanced Analytics */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <DeltaAnalysis drivers={driverStats} />
+              <RiskMap />
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <AttackZones />
+              <StrategyWindow />
+            </div>
+            
             {/* Telemetry Charts */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <TelemetryChart title="SPEED" dataKey="speed" color="#00ff88" unit="km/h" />
@@ -178,7 +195,7 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Driver Leaderboard */}
+          {/* Driver Leaderboard & Intelligence */}
           <div className="space-y-4">
             <div className="bg-gradient-carbon border-2 border-border rounded-xl p-4">
               <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-foreground">
@@ -191,6 +208,9 @@ const Index = () => {
                 ))}
               </div>
             </div>
+            
+            <TrackIntelligence />
+            <CornerAnalysis />
           </div>
         </div>
 
