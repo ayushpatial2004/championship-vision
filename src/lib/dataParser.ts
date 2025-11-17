@@ -29,6 +29,13 @@ export interface DriverLapStats {
   bestLaps: Array<{ time: number; lapNum: number }>;
 }
 
+export interface LapStartEndData {
+  vehicleId: string;
+  lap: number;
+  timestamp: string;
+  value: string; // ISO timestamp of lap start/end
+}
+
 // Parse weather CSV data
 export const parseWeatherData = async (csvText: string): Promise<WeatherData[]> => {
   return new Promise((resolve, reject) => {
@@ -119,6 +126,28 @@ export const parseBestLaps = async (csvText: string): Promise<DriverLapStats[]> 
           };
         });
         resolve(data.filter((d) => d.totalLaps > 0));
+      },
+      error: reject,
+    });
+  });
+};
+
+// Parse lap start/end times CSV data
+export const parseLapStartEnd = async (csvText: string): Promise<LapStartEndData[]> => {
+  return new Promise((resolve, reject) => {
+    Papa.parse(csvText, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const data = results.data
+          .map((row: any) => ({
+            vehicleId: row.vehicle_id,
+            lap: parseInt(row.lap),
+            timestamp: row.timestamp,
+            value: row.value,
+          }))
+          .filter((item) => item.lap < 32768 && item.value); // Filter out invalid laps
+        resolve(data);
       },
       error: reject,
     });
