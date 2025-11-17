@@ -46,16 +46,22 @@
 
 ## ⏳ Pending Integration
 
-### 6. Google Drive ZIP Archives
+### 6. R1 COTA Telemetry Data (2.2GB)
+- **File**: `R1_cota_telemetry_data.csv`
+- **Status**: ❌ Download failed (Google Drive virus scan warning)
+- **Expected Contents**: Full telemetry data including speed, throttle, brake, gear, position data for all vehicles
+- **Action Needed**: Manual upload required (file too large for automated download)
+
+### 7. Google Drive ZIP Archives
 - **Files**:
   - `src/data/google_drive_file_1.zip`
   - `src/data/google_drive_file_2.zip`
-- **Status**: ⏳ Downloaded but not extracted
+- **Status**: ⏳ Downloaded but contain HTML warning pages instead of actual data
 - **Expected Contents**: 
   - 88 split telemetry chunks (micro-segment data)
   - Detailed sector timing files
   - `23_AnalysisEnduranceWithSections_Race` files
-- **Action Needed**: Extract ZIP files and upload individual CSV files
+- **Action Needed**: Provide direct download links that bypass Google Drive's virus scan warning, or upload files directly
 
 ---
 
